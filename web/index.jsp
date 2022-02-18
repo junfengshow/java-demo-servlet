@@ -8,7 +8,7 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <html>
   <head>
-    <title>$Title$</title>
+    <title>接口管理</title>
     <style>
       * { margin: 0; padding: 0; }
       a {
@@ -19,7 +19,8 @@
   </head>
   <body>
     <h1>hello world</h1>
-    <a id="userServlet">userServlet</a>
+    <a id="usersServlet">usersServlet</a>
+    <a id="demoServlet">demoServlet</a>
     <script src="/scripts/main.js"></script>
   </body>
 </html>

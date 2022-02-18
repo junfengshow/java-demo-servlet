@@ -1,69 +1,77 @@
+/**
+ *
+ * 发起请求
+ */
 package com.servletDemo.servlet;
-
 import com.alibaba.fastjson.JSONObject;
-
-import javax.servlet.*;
-import java.util.Enumeration;
+import javax.jws.WebMethod;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.Map;
+import java.lang.reflect.Method;
 
-public class UserServlet implements Servlet {
-  public void init (ServletConfig servletConfig) {
-    System.out.println("init");
-  }
-  public void service (ServletRequest req, ServletResponse res) {
-    // 1 使用json方便序列化
-    JSONObject json = new JSONObject();
+import com.servletDemo.service.impl.UsersImpl;
+
+
+@WebServlet("/users/*")
+public class UserServlet extends HttpServlet {
+  private UsersImpl udi = new UsersImpl();
+  @Override
+  protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
     try {
-      // ---------------------------------------------------------------------------------------------------------------
-      // AsyncContext:
-      // 1.servlet3.0新增的功能
-      // 2.作用: 支持异步处理，使得长时间业务处理不至于阻塞程序
-      // ---------------------------------------------------------------------------------------------------------------
-      // ServletRequest
-      // 1.getParameterNames 返回参数的枚举集
-      // 2.getParameterMap 获取参数集合 其中value为字符串数组
-      Enumeration<String> em = req.getParameterNames();
-      Map<String, String[]> hm = req.getParameterMap();
-      while (em.hasMoreElements()) {
-        String name = em.nextElement();
-        String[] valueArray = hm.get(name);
-        if (valueArray != null) {
-          json.put(name, valueArray[0]);
-        }
+      resp.setCharacterEncoding("utf8");
+      resp.setContentType("text/text;charset=utf8");
+
+      PrintWriter out = resp.getWriter();
+      // 获取虚拟目录
+      String servletPath = req.getServletPath();
+      // 获取请求地址
+      String reqUri = req.getRequestURI();
+      // 解析出虚拟目录之后的地址
+      String remainUrl = reqUri.substring(servletPath.length());
+      // 解析出方法名
+      // String methodName = remainUrl.substring
+      String methodName = remainUrl.split("/")[1];
+
+      Class c = UserServlet.class;
+      Method method = null;
+      try {
+        method = c.getMethod(methodName, HttpServletRequest.class, HttpServletResponse.class);
+      } catch (Exception e) {
+        e.printStackTrace();
       }
-      // AsyncContext
-      AsyncContext ac = req.startAsync();
-      // setAttribute getAttributeNames
-      req.setAttribute("name", "李四");
-
-      Enumeration<String> attributeNames = req.getAttributeNames();
-      while (attributeNames.hasMoreElements()) {
-        String attributeName = attributeNames.nextElement();
-        System.out.println(attributeName + ": " + req.getAttribute(attributeName));
+      if (method != null) {
+        resp.setContentType("application/json;utf8");
+        Object obj = method.invoke(this, req, resp);
+        resp.getWriter().println(obj);
+      } else {
+        resp.setStatus(404);
+        out.println();
       }
-
-      req.setCharacterEncoding("utf-8");
-
-      // 设置返回的字符集
-      res.setCharacterEncoding("utf-8");
-      // 设置返回的类型
-      res.setContentType("application/json");
-      // 获取可写对象
-      PrintWriter pw = res.getWriter();
-      // 将返回值写入并返回
-      pw.println(json.toString());
-      ac.complete();
     } catch (Exception e) {
       e.printStackTrace();
     }
   }
-  public String getServletInfo () {
-    System.out.println("info");
-    return null;
+
+  @Override
+  protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    this.doGet(req, resp);
   }
-  public ServletConfig getServletConfig () {
-    return null;
+
+  public JSONObject getInfo (HttpServletRequest req, HttpServletResponse resp) {
+    JSONObject json = new JSONObject();
+    try {
+
+      json.put("data", udi.getUsers());
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+    return json;
   }
-  public void destroy () {}
 }
